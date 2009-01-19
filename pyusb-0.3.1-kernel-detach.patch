@@ -1,0 +1,83 @@
+Only in pyusb-0.3.1-srw: build
+diff -u pyusb-0.3.1/pyusb.c pyusb-0.3.1-srw/pyusb.c
+--- pyusb-0.3.1/pyusb.c	2005-10-27 22:20:48.000000000 +0100
++++ pyusb-0.3.1-srw/pyusb.c	2006-01-26 09:21:33.000000000 +0000
+@@ -12,6 +12,7 @@
+ #include "pyusb.h"
+ #include <stdlib.h>
+ #include <stdio.h>
++#include <errno.h>
+ #define DEFAULT_TIMEOUT 100
+ 
+ /*
+@@ -1303,6 +1304,39 @@
+ 	}
+ }
+ 
++PYUSB_STATIC PyObject *Py_usb_DeviceHandle_detachKernelDriver(
++	PyObject *self,
++	PyObject *args
++	)
++{
++	int tInterface, ret;
++	Py_usb_DeviceHandle *_self = (Py_usb_DeviceHandle *) self;
++
++	if (SUPPORT_NUMBER_PROTOCOL(args)) {
++		tInterface = (int) py_NumberAsInt(args);
++		if (PyErr_Occurred()) return NULL;
++	} else {
++		PyErr_BadArgument();
++		return NULL;
++	}
++
++#if DUMP_PARAMS
++
++	fprintf(stderr,
++			"detachKernalDriver params:\n\taltInterface: %d\n",
++			altInterface);
++
++#endif /* DUMP_PARAMS */
++
++	ret = usb_detach_kernel_driver_np(_self->deviceHandle, tInterface);
++	if ((ret < 0) && (errno != ENODATA)) {
++		PyUSB_Error();
++		return NULL;
++	} else {
++		Py_RETURN_NONE;
++	}
++}
++
+ PYUSB_STATIC PyObject *Py_usb_DeviceHandle_bulkWrite(
+ 	PyObject *self,
+ 	PyObject *args
+@@ -1738,6 +1772,14 @@
+ 	 "Arguments:\n"
+ 	 "\talternate: an alternate setting number or an Interface object."},
+ 
++	{"detachKernelDriver",
++	 Py_usb_DeviceHandle_detachKernelDriver,
++	 METH_O,
++	 "detachKernelDriver(interface) -> None\n\n"
++	 "Detaches a kernel driver from the interface specified.\n"
++	 "Arguments:\n"
++	 "\talternate: an Interface object."},
++
+ 	{"bulkWrite",
+ 	 Py_usb_DeviceHandle_bulkWrite,
+ 	 METH_VARARGS,
+diff -u pyusb-0.3.1/pyusb.h pyusb-0.3.1-srw/pyusb.h
+--- pyusb-0.3.1/pyusb.h	2005-10-14 00:06:07.000000000 +0100
++++ pyusb-0.3.1-srw/pyusb.h	2006-01-25 16:33:13.000000000 +0000
+@@ -195,6 +195,11 @@
+ 	PyObject *args
+ 	);
+ 
++PYUSB_STATIC PyObject *Py_usb_DeviceHandle_detachKernelDriver(
++	PyObject *self,
++	PyObject *args
++	);
++
+ PYUSB_STATIC PyObject *Py_usb_DeviceHandle_bulkWrite(
+ 	PyObject *self,
+ 	PyObject *args
+Common subdirectories: pyusb-0.3.1/samples and pyusb-0.3.1-srw/samples
